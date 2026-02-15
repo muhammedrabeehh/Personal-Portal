@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, CheckSquare } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, CheckSquare, ListTodo } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
 const routes = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { label: 'To-Do', icon: ListTodo, href: '/todo' },
     { label: 'Habits', icon: CheckSquare, href: '/habits' },
     { label: 'Calendar', icon: CalendarDays, href: '/calendar' },
 ]

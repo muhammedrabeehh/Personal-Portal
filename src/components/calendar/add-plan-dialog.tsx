@@ -28,7 +28,7 @@ import { CalendarPlus } from 'lucide-react'
 const URGENCY_LEVELS = [
     { value: 'light', label: 'Light Urgent', color: '#ca8a04' },
     { value: 'medium', label: 'Intermediate', color: '#ea580c' },
-    { value: 'high', label: 'Very Urgent', color: '#dc2626' },
+    { value: 'urgent', label: 'Very Urgent', color: '#dc2626' },
 ]
 
 export function AddPlanDialog({
@@ -66,7 +66,8 @@ export function AddPlanDialog({
             title: title.trim(),
             start_time: startDateTime,
             end_time: endDateTime,
-            category: urgency,
+            urgency: urgency, // Use urgency column
+            category: 'session' // Default category
         })
 
         if (error) {

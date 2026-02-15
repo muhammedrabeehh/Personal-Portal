@@ -7,6 +7,7 @@ import {
     CalendarDays,
     CheckSquare,
     LogOut,
+    ListTodo,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import { motion } from 'framer-motion'
 const routes = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'Habits', icon: CheckSquare, href: '/habits' },
+    { label: 'To-Do', icon: ListTodo, href: '/todo' },
     { label: 'Calendar', icon: CalendarDays, href: '/calendar' },
 ]
 

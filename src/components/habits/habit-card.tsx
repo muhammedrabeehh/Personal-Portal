@@ -6,11 +6,12 @@ import { Trash2, Pencil, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useAuth } from '@/components/providers/auth-provider'
 
 type Habit = {
     id: string
     name: string
-    current_value: number
+    completed: boolean
 }
 
 export function HabitRow({
@@ -28,24 +29,40 @@ export function HabitRow({
     const [editName, setEditName] = useState(habit.name)
     const [editLoading, setEditLoading] = useState(false)
     const supabase = createClient()
-
-    const isCompleted = habit.current_value >= 1
+    const { user } = useAuth()
 
     async function toggleHabit() {
-        if (isEditing) return
+        if (isEditing || !user) return
         setLoading(true)
-        const newValue = isCompleted ? 0 : 1
-        const { error } = await supabase
-            .from('habits')
-            .update({ current_value: newValue })
-            .eq('id', habit.id)
 
-        if (error) {
-            toast.error('Failed to update habit')
-        } else {
+        try {
+            const today = new Date().toISOString().split('T')[0]
+
+            if (habit.completed) {
+                // Delete log
+                const { error } = await supabase
+                    .from('habit_logs')
+                    .delete()
+                    .eq('habit_id', habit.id)
+                    .eq('completed_at', today)
+                if (error) throw error
+            } else {
+                // Insert log
+                const { error } = await supabase
+                    .from('habit_logs')
+                    .insert({
+                        habit_id: habit.id,
+                        completed_at: today
+                    })
+                if (error) throw error
+            }
             onUpdate()
+        } catch (error) {
+            console.error(error)
+            toast.error('Failed to update habit')
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     async function deleteHabit() {
@@ -86,20 +103,15 @@ export function HabitRow({
 
     return (
         <>
-            <motion.div
-                layout
-                className="flex items-center justify-between py-3.5"
-                style={{ borderBottom: '1px solid var(--separator)' }}
-            >
-                {/* Left: toggle + name */}
-                <div className="flex min-h-[44px] flex-1 items-center gap-3 min-w-0">
+            <div className="sheet-item group hover:bg-transparent">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                     <motion.button
                         whileTap={{ scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                        className={`habit-toggle ${isCompleted ? 'checked' : ''}`}
+                        className={`habit-toggle ${habit.completed ? 'checked' : ''}`}
                         onClick={toggleHabit}
                         disabled={loading || isEditing}
-                        aria-label={isCompleted ? 'Mark incomplete' : 'Mark complete'}
+                        aria-label={habit.completed ? 'Mark incomplete' : 'Mark complete'}
                     />
 
                     {isEditing ? (
@@ -135,26 +147,20 @@ export function HabitRow({
                             </motion.button>
                         </div>
                     ) : (
-                        <button
-                            onClick={toggleHabit}
-                            disabled={loading}
-                            className="flex-1 text-left"
+                        <span
+                            onClick={!isEditing ? toggleHabit : undefined}
+                            className={`text-sm font-light transition-all flex-1 cursor-pointer truncate ${habit.completed
+                                ? 'text-muted-foreground line-through opacity-70'
+                                : 'text-foreground'
+                                }`}
                         >
-                            <span
-                                className={`text-sm transition-all ${isCompleted
-                                        ? 'font-light text-primary line-through opacity-50'
-                                        : 'font-light text-foreground'
-                                    }`}
-                            >
-                                {habit.name}
-                            </span>
-                        </button>
+                            {habit.name}
+                        </span>
                     )}
                 </div>
 
-                {/* Right: edit + delete buttons */}
                 {!isEditing && (
-                    <div className="ml-2 flex flex-shrink-0 items-center gap-0.5">
+                    <div className="ml-2 flex flex-shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <motion.button
                             whileTap={{ scale: 0.85 }}
                             className="p-1.5 text-muted-foreground transition-colors hover:text-primary"
@@ -173,7 +179,7 @@ export function HabitRow({
                         </motion.button>
                     </div>
                 )}
-            </motion.div>
+            </div>
 
             <ConfirmDialog
                 open={confirmOpen}

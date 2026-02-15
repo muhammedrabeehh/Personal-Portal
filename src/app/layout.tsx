@@ -12,8 +12,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Discipline',
-  description: 'Private Personal Portal',
+  title: 'Discipline OS',
+  description: 'Next-Level Personal Discipline Portal',
 }
 
 export default function RootLayout({

@@ -6,7 +6,6 @@ import { useAuth } from '@/components/providers/auth-provider'
 import { AddPlanDialog } from '@/components/calendar/add-plan-dialog'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X, Trash2, Pencil } from 'lucide-react'
-import { FadeIn } from '@/components/motion/motion-list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -17,17 +16,18 @@ type Plan = {
     start_time: string
     end_time: string
     category: string
+    urgency: 'light' | 'medium' | 'urgent'
 }
 
 const urgencyConfig: Record<string, { label: string; dotClass: string; pillClass: string }> = {
     light: { label: 'Light Urgent', dotClass: 'bg-[#ca8a04]', pillClass: 'urgency-light' },
     medium: { label: 'Intermediate', dotClass: 'bg-[#ea580c]', pillClass: 'urgency-medium' },
-    high: { label: 'Very Urgent', dotClass: 'bg-[#dc2626]', pillClass: 'urgency-high' },
+    urgent: { label: 'Very Urgent', dotClass: 'bg-[#dc2626]', pillClass: 'urgency-high' },
 }
 
-// Fallback for old category values
-function getUrgency(category: string) {
-    return urgencyConfig[category] || urgencyConfig.medium
+// Helper to safely get urgency config
+function getUrgencyConfig(urgency: string) {
+    return urgencyConfig[urgency] || urgencyConfig.medium
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -65,7 +65,7 @@ export function CalendarView() {
             toast.error('Failed to load plans')
         }
 
-        setPlans(data || [])
+        setPlans(data as Plan[] || [])
         setLoading(false)
     }, [user, currentMonth, supabase])
 
@@ -84,7 +84,7 @@ export function CalendarView() {
     function startEditing(plan: Plan) {
         setEditingPlan(plan)
         setEditTitle(plan.title)
-        setEditUrgency(plan.category)
+        setEditUrgency(plan.urgency || 'medium')
         const startDate = new Date(plan.start_time)
         const endDate = new Date(plan.end_time)
         setEditStartTime(`${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`)
@@ -102,7 +102,7 @@ export function CalendarView() {
             .from('calendar_plans')
             .update({
                 title: editTitle.trim(),
-                category: editUrgency,
+                urgency: editUrgency,
                 start_time: new Date(`${dateStr}T${editStartTime}:00`).toISOString(),
                 end_time: new Date(`${dateStr}T${editEndTime}:00`).toISOString(),
             })
@@ -133,7 +133,7 @@ export function CalendarView() {
     const month = currentMonth.getMonth()
     const firstDayOfMonth = new Date(year, month, 1)
     const lastDayOfMonth = new Date(year, month + 1, 0)
-    const startDayOffset = ((firstDayOfMonth.getDay() + 6) % 7)
+    const startDayOffset = ((firstDayOfMonth.getDay() + 6) % 7) // Mon start
     const totalDays = lastDayOfMonth.getDate()
     const today = new Date()
     const todayStr = today.toDateString()
@@ -226,7 +226,7 @@ export function CalendarView() {
                                         {dayPlans.slice(0, 3).map((p) => (
                                             <div
                                                 key={p.id}
-                                                className={`h-1.5 w-1.5 rounded-full ${getUrgency(p.category).dotClass}`}
+                                                className={`h-1.5 w-1.5 rounded-full ${getUrgencyConfig(p.urgency).dotClass}`}
                                             />
                                         ))}
                                         {dayPlans.length > 3 && (
@@ -278,7 +278,7 @@ export function CalendarView() {
                             ) : (
                                 <div className="space-y-1">
                                     {selectedPlans.map((plan) => {
-                                        const uc = getUrgency(plan.category)
+                                        const uc = getUrgencyConfig(plan.urgency)
                                         return (
                                             <div
                                                 key={plan.id}

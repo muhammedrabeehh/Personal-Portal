@@ -10,13 +10,13 @@ type Plan = {
     id: string
     title: string
     start_time: string
-    category: string
+    urgency: string
 }
 
 const urgencyConfig: Record<string, { label: string; pillClass: string }> = {
     light: { label: 'Light', pillClass: 'urgency-light' },
     medium: { label: 'Medium', pillClass: 'urgency-medium' },
-    high: { label: 'Urgent', pillClass: 'urgency-high' },
+    urgent: { label: 'Urgent', pillClass: 'urgency-high' },
 }
 
 export function TodaySchedule() {
@@ -34,12 +34,12 @@ export function TodaySchedule() {
 
             const { data } = await supabase
                 .from('calendar_plans')
-                .select('id, title, start_time, category')
+                .select('id, title, start_time, urgency')
                 .gte('start_time', startOfDay)
                 .lte('start_time', endOfDay)
                 .order('start_time', { ascending: true })
 
-            setPlans(data || [])
+            setPlans(data as Plan[] || [])
             setLoading(false)
         }
         fetch()
@@ -56,7 +56,7 @@ export function TodaySchedule() {
             ) : (
                 <StaggerContainer className="space-y-0">
                     {plans.map((plan) => {
-                        const uc = urgencyConfig[plan.category] || urgencyConfig.medium
+                        const uc = urgencyConfig[plan.urgency] || urgencyConfig.medium
                         return (
                             <StaggerItem key={plan.id}>
                                 <div
